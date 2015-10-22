@@ -15,12 +15,13 @@ import entities.Group;
 import java.util.concurrent.ExecutionException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PUT;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+
 import scrape.Scraper;
 
 /**
@@ -47,7 +48,7 @@ public class GroupResource {
      */
     @GET
     @Produces("application/json; charset=UTF-8")
-    public String getGroups() throws InterruptedException, ExecutionException {
+    public Response getGroups() throws InterruptedException, ExecutionException {
         //TODO return proper representation object
         JsonArray ja = new JsonArray();
 
@@ -58,12 +59,20 @@ public class GroupResource {
             jo.addProperty("groupNo", g.getGroupNo());
             ja.add(jo);
         }
+
+        CacheControl cc = new CacheControl();
+        cc.setPrivate(true); // mostly client can access 
+        cc.setMaxAge(3600); // one hour of cache
+
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonParser jp = new JsonParser();
         JsonElement je = jp.parse(ja.toString());
         String prettyJsonString = gson.toJson(je);
 
-        return prettyJsonString;
+        ResponseBuilder builder = Response.ok(prettyJsonString);
+
+        builder.cacheControl(cc);
+        return builder.build();
 
     }
 
