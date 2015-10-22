@@ -26,7 +26,7 @@ import org.jsoup.select.Elements;
 public class Scraper {
 
     public List<Group> groups = new ArrayList();
-    
+
     public List<String> urls = new ArrayList<String>() {
         {
             //Class A
@@ -80,6 +80,32 @@ public class Scraper {
             return new Group(authors, classDescr, groupNo);
         }
 
+    }
+
+    public static List<Group> beginScrape() throws InterruptedException, ExecutionException {
+        
+        
+        Scraper s = new Scraper();
+
+        ExecutorService threadPool = Executors.newFixedThreadPool(10);
+        List<Future<Group>> futures = new ArrayList();
+
+        for (String url : s.urls) {
+            Future fut = threadPool.submit(s.new ScraperWorkerUnit(url));
+            futures.add(fut);
+        }
+
+        threadPool.shutdown();
+        threadPool.awaitTermination(1, TimeUnit.DAYS);
+
+        List<Group> groups = new ArrayList();
+        
+        for (Future<Group> fut : futures) {
+            groups.add(fut.get());
+        }
+    
+        return groups;
+    
     }
 
     public static void main(String[] args) throws InterruptedException, ExecutionException {
