@@ -5,6 +5,7 @@
  */
 package scrape;
 
+import entities.Group;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -24,6 +25,8 @@ import org.jsoup.select.Elements;
  */
 public class Scraper {
 
+    public List<Group> groups = new ArrayList();
+    
     public List<String> urls = new ArrayList<String>() {
         {
             //Class A
@@ -51,7 +54,7 @@ public class Scraper {
         }
     };
 
-    private class ScraperWorkerUnit implements Callable<List<String>> {
+    private class ScraperWorkerUnit implements Callable<Group> {
 
         private String url;
 
@@ -60,23 +63,21 @@ public class Scraper {
         }
 
         @Override
-        public List<String> call() throws Exception {
-            List<String> returnList = new ArrayList();
-
+        public Group call() throws Exception {
             // get authors
             Document doc = Jsoup.connect(url).get();
             Elements elements = doc.select("#authors");
-            returnList.add(elements.text());
+            String authors = (elements.text());
 
             // get class
             elements = doc.select("#class");
-            returnList.add(elements.text());
+            String classDescr = (elements.text());
 
             // get group
-            Elements authors = doc.select("#group");
-            returnList.add(authors.text());
+            elements = doc.select("#group");
+            String groupNo = (elements.text());
 
-            return returnList;
+            return new Group(authors, classDescr, groupNo);
         }
 
     }
@@ -85,7 +86,7 @@ public class Scraper {
         Scraper s = new Scraper();
 
         ExecutorService threadPool = Executors.newFixedThreadPool(10);
-        List<Future<List<String>>> futures = new ArrayList();
+        List<Future<Group>> futures = new ArrayList();
 
         for (String url : s.urls) {
             Future fut = threadPool.submit(s.new ScraperWorkerUnit(url));
@@ -96,10 +97,10 @@ public class Scraper {
         threadPool.awaitTermination(1, TimeUnit.DAYS);
 
         // initially just print the values to the console
-        for (Future<List<String>> fut : futures) {
-            for (String elem : fut.get()) {
-                System.out.println(elem);
-            }
+        for (Future<Group> fut : futures) {
+            System.out.println("authors: " + fut.get().getAuthors());
+            System.out.println("class: " + fut.get().getClassDescr());
+            System.out.println("groupNo: " + fut.get().getGroupNo());
             System.out.println("");
         }
     }
